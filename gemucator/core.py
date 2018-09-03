@@ -184,13 +184,18 @@ class gemucator(object):
 
                     else:
 
-                        raise Exception("mutation "+mutation+" didn't trigger any logic!")
+                        raise Exception("are you sure mutation "+mutation+" is in this reference genome?")
+
+        if not found_record:
+            raise Exception("are you sure mutation "+mutation+" is in this reference genome?")
 
         return(base_positions,bases)
 
     def identify_gene(self,location):
 
         assert int(location)>0, "genomic position has to be a positive integer"
+
+        assert int(location)<len(self.genome), "genome position has to be less than the size of the genome...!"
 
         # now that we know what we are looking for, iterate through all the features in the genomes
         for record in self.genome.features:
@@ -221,8 +226,6 @@ class gemucator(object):
 
                     return(gene_name,residue,position)
 
-        print(location)
-
         # now that we know what we are looking for, iterate through all the features in the genomes
         for record in self.genome.features:
 
@@ -247,3 +250,5 @@ class gemucator(object):
                         gene_name=record.qualifiers['gene'][0]
                         base=self.genome[location].lower()
                         return(gene_name,base,position)
+
+        return(None,None,None)

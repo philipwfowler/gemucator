@@ -29,7 +29,13 @@ if __name__ == "__main__":
 
         (gene,ref,position) = reference_genome.identify_gene(options.location)
 
-        print(gene+"_"+ref+str(position))
+        if gene is not None:
+
+            print(gene+"_"+ref+str(position))
+
+        else:
+
+            print("Cannot find a gene or plausible promoter for location "+str(options.location))
 
     else:
         raise Exception("Must specify one of --mutation or --location!")
