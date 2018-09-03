@@ -7,16 +7,19 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--mutation",help="the full length mutation to locate on the genome e.g. rpoB_S450L")
-    parser.add_argument("--nucleotide",action='store_true',help="overrides the logic and forces the code to treat this as a simple nucleotide mutation. Useful for RNA genes.")
+    parser.add_argument("--nucleotide",action='store_true',help="overrides the logic and forces the code to treat this mutation as a simple nucleotide mutation. Useful for RNA genes.")
     parser.add_argument("--location",type=int,help="the genome position we want to find the gene for")
+    parser.add_argument("--genbank_file",help="the path to the reference GenBank file we want to work with. If not specified, the code will load H37rV.gbk from its config/ folder.")
     options = parser.parse_args()
 
-    tb_reference_genome=gemucator()
+    if options.genbank_file:
+        reference_genome=gemucator(genbank_file=options.genbank_file)
+    else:
+        reference_genome=gemucator()
 
     if options.mutation:
 
-        (locations,bases)=tb_reference_genome.locate_mutation(options.mutation,nucleotide_mutation=options.nucleotide)
-            # (locations,bases)=tb_reference_genome.locate_mutation(options.mutation)
+        (locations,bases)=reference_genome.locate_mutation(options.mutation,nucleotide_mutation=options.nucleotide)
 
         print(options.mutation+":")
         for (p,b) in zip(locations,bases):
@@ -24,7 +27,7 @@ if __name__ == "__main__":
 
     elif options.location:
 
-        (gene,ref,position) = tb_reference_genome.identify_gene(options.location)
+        (gene,ref,position) = reference_genome.identify_gene(options.location)
 
         print(gene+"_"+ref+str(position))
 
