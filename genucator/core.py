@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+import pkg_resources
+
 from Bio import SeqIO
 
 class genucator(object):
@@ -19,7 +21,7 @@ class genucator(object):
         * The code is extremely defensive and if the mutation nomenclature includes the reference amino acid or base, this will be checked against the provided genbank file.
     '''
 
-    def __init__(self, genbank_file="config/H37rV.gbk"):
+    def __init__(self, genbank_file=pkg_resources.resource_filename("genucator", "../config/H37rV.gbk")):
         ''' Instantiate an instance of the class by loading the specified GenBank file
         '''
 
@@ -58,7 +60,7 @@ class genucator(object):
             # if the position is a negative integer then this is a promoter nucleotide mutation
             if position<0:
 
-                assert before in ['c','t','g','a'], after+" is not a nucleotide!"
+                assert before in ['c','t','g','a'], before+" is not a nucleotide!"
                 assert after in ['c','t','g','a'], after+" is not a nucleotide!"
 
                 mutation_type="PROMOTER"
@@ -124,7 +126,7 @@ class genucator(object):
 
                             bases=self.genome[base_position:base_position+3].seq
 
-                            assert before==bases.translate(), "wildtype amino acid specified in mutation does not match the "+self.genbank_file+" genbank file"
+                            assert before==bases.translate(), "wildtype amino acid specified in mutation ("+before+") does not match the "+self.genbank_file+" genbank file ("+bases.translate()+")"
 
                             bases=str(bases).lower()
 
@@ -138,7 +140,7 @@ class genucator(object):
 
                             bases=self.genome[base_position-3:base_position].reverse_complement().seq
 
-                            assert before==bases.translate(), "wildtype amino acid specified in mutation does not match the "+self.genbank_file+" genbank file"
+                            assert before==bases.translate(), "wildtype amino acid specified in mutation ("+before+") does not match the "+self.genbank_file+" genbank file ("+bases.translate()+")"
 
                             bases=str(bases).lower()
 
@@ -162,7 +164,7 @@ class genucator(object):
 
                         # as the reference base is specified for a promoter mutation, be defensive and check it agrees with the genbank file
                         if mutation_type=="PROMOTER":
-                            assert bases==before, "wildtype base specified in mutation does not match the "+self.genbank_file+" genbank file"
+                            assert bases==before, "wildtype base specified in mutation ("+before+") does not match the "+self.genbank_file+" genbank file ("+bases+")"
 
                         base_positions.append(base_position)
 
