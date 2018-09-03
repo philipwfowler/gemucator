@@ -2,7 +2,7 @@
 
 # genucator
 
-genucator is short for "Genbank Mutation Locator". It is a simple Python3 class for incorporating into tools that, if you give it a mutation, it will tell its location in the reference genome. The `genucator` class accepts a path to a genbank file; since I am working with /M. tuberculosis/ this is the H37rV genbank file by default, but any genbank file should work.
+genucator is short for "Genbank Mutation Locator". It is a simple Python3 class for incorporating into tools that, if you give it a mutation, it will tell its location in the reference genome (and vice versa). The `genucator` class accepts a path to a genbank file; since I am working with /M. tuberculosis/ this is the H37rV genbank file by default, but any genbank file should work.
 
 The package comes with a simple script called `genucator-run.py` that shows how it works. All these examples are for TB.
 
@@ -29,6 +29,17 @@ Traceback (most recent call last):
 AssertionError: wildtype amino acid specified in mutation does not match the config/H37rV.gbk genbank file
 ```
 
+Now we can go the other way as well.
+
+```
+> genucator-run.py --location 761153
+rpoB_S450
+> genucator-run.py --location 761154
+rpoB_S450
+> genucator-run.py --location 761155
+rpoB_S450
+```
+
 It also handles promoter (nucleotide) mutations. e.g.
 
 ```
@@ -50,6 +61,8 @@ Traceback (most recent call last):
     assert before in ['c','t','g','a'], before+" is not a nucleotide!"
 AssertionError: x is not a nucleotide!
 ```
+Note that mutation->location->mutation is not uniquely defined for some 'promoters' i.e. the promoter for gene X may lie within the coding region of gene Y which makes assigning it as a CDS mutation or a PROM mutation difficult.
+
 Finally, it will parse insertions and deletions as long as they conform to the format like in the example below.
 
 ```
