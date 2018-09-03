@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import argparse
-from genucator import genucator
+from gemucator import gemucator
 
 if __name__ == "__main__":
 
@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument("--location",type=int,help="the genome position we want to find the gene for")
     options = parser.parse_args()
 
-    tb_reference_genome=genucator()
+    tb_reference_genome=gemucator()
 
     if options.mutation:
 

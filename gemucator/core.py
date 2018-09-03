@@ -4,9 +4,9 @@ import pkg_resources
 
 from Bio import SeqIO
 
-class genucator(object):
+class gemucator(object):
 
-    '''The genucator class (short for GenBank Mutation Locator) is designed to tell you the location of a mutation
+    '''The gemucator class (short for GenBank Mutation Locator) is designed to tell you the location of a mutation
     in the given GenBank reference genome.
 
     Args:
@@ -21,7 +21,7 @@ class genucator(object):
         * The code is extremely defensive and if the mutation nomenclature includes the reference amino acid or base, this will be checked against the provided genbank file.
     '''
 
-    def __init__(self, genbank_file=pkg_resources.resource_filename("genucator", "../config/H37rV.gbk")):
+    def __init__(self, genbank_file=pkg_resources.resource_filename("gemucator", "../config/H37rV.gbk")):
         ''' Instantiate an instance of the class by loading the specified GenBank file
         '''
 
