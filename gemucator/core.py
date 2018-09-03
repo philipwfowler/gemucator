@@ -186,7 +186,7 @@ class gemucator(object):
 
                         raise Exception("are you sure mutation "+mutation+" is in this reference genome?")
 
-        if not found_record:
+        if not base_positions:
             raise Exception("are you sure mutation "+mutation+" is in this reference genome?")
 
         return(base_positions,bases)
