@@ -33,12 +33,13 @@ class genucator(object):
 
 
 
-    def locate_mutation(self,mutation):
+    def locate_mutation(self,mutation,nucleotide_mutation=False):
 
         '''Given a specified mutation, return the location(s) and nucleotide(s) in the reference genome.
 
         Args:
             mutation (str): a SNP, PROMOTER or INDEL mutation in the format described in the class docstring.
+            nucleotide_mutation (bool): if True, forces the code to consider this a simple nucleotide mutation (i.e. not an amino acid). Useful for RNA genes like rrs.
         '''
 
         # first, parse the mutation
@@ -61,15 +62,22 @@ class genucator(object):
             if position<0:
 
                 assert before in ['c','t','g','a'], before+" is not a nucleotide!"
-                assert after in ['c','t','g','a'], after+" is not a nucleotide!"
+                assert after in ['c','t','g','a','*'], after+" is not a nucleotide!"
 
                 mutation_type="PROMOTER"
 
             # ..otherwise it is an amino acid SNP
             else:
 
-                assert before in ['*',"!",'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z'], after+" is not an amino acid!"
-                assert after in ['*',"!",'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z'], after+" is not an amino acid!"
+                if nucleotide_mutation:
+
+                    assert before in ['c','t','g','a'], before+" is not a nucleotide!"
+                    assert after in ['c','t','g','a','*'], after+" is not a nucleotide!"
+
+                else:
+
+                    assert before in ["!",'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z'], after+" is not an amino acid!"
+                    assert after in ['*',"!",'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z'], after+" is not an amino acid!"
 
                 mutation_type="SNP"
 
@@ -118,7 +126,7 @@ class genucator(object):
 
                     base_positions=[]
 
-                    if mutation_type=="SNP":
+                    if mutation_type=="SNP" and not nucleotide_mutation:
 
                         if strand==1:
 
@@ -126,7 +134,10 @@ class genucator(object):
 
                             bases=self.genome[base_position:base_position+3].seq
 
-                            assert before==bases.translate(), "wildtype amino acid specified in mutation ("+before+") does not match the "+self.genbank_file+" genbank file ("+bases.translate()+")"
+                            if before=="!":
+                                assert "*"==bases.translate(), "wildtype amino acid specified in mutation ("+before+") does not match the "+self.genbank_file+" genbank file ("+bases.translate()+")"
+                            else:
+                                assert before==bases.translate(), "wildtype amino acid specified in mutation ("+before+") does not match the "+self.genbank_file+" genbank file ("+bases.translate()+")"
 
                             bases=str(bases).lower()
 
@@ -140,7 +151,10 @@ class genucator(object):
 
                             bases=self.genome[base_position-3:base_position].reverse_complement().seq
 
-                            assert before==bases.translate(), "wildtype amino acid specified in mutation ("+before+") does not match the "+self.genbank_file+" genbank file ("+bases.translate()+")"
+                            if before=="!":
+                                assert "*"==bases.translate(), "wildtype amino acid specified in mutation ("+before+") does not match the "+self.genbank_file+" genbank file ("+bases.translate()+")"
+                            else:
+                                assert before==bases.translate(), "wildtype amino acid specified in mutation ("+before+") does not match the "+self.genbank_file+" genbank file ("+bases.translate()+")"
 
                             bases=str(bases).lower()
 
@@ -148,7 +162,7 @@ class genucator(object):
                                 base_positions.append(base_position)
                                 base_position+=-1
 
-                    elif mutation_type in ["PROMOTER","INDEL"]:
+                    elif (mutation_type in ["PROMOTER","INDEL"]) or nucleotide_mutation:
 
                         if strand==1:
 
@@ -168,5 +182,68 @@ class genucator(object):
 
                         base_positions.append(base_position)
 
+                    else:
+
+                        raise Exception("mutation "+mutation+" didn't trigger any logic!")
 
         return(base_positions,bases)
+
+    def identify_gene(self,location):
+
+        assert int(location)>0, "genomic position has to be a positive integer"
+
+        # now that we know what we are looking for, iterate through all the features in the genomes
+        for record in self.genome.features:
+
+            # check that the record is a Coding Sequence
+            if record.type in ['CDS','rRNA']:
+
+                # the start and end positions in the reference genome
+                start=record.location.start.position
+                end=record.location.end.position
+
+                if start < location < end:
+
+                    # retrieve the coding nucleotides for this gene
+                    coding_nucleotides=self.genome[start:end]
+
+                    gene_name=record.qualifiers['gene'][0]
+
+                    strand=record.location.strand.real
+
+                    if strand==1:
+
+                        position=(location-start+3)//3
+                        residue=coding_nucleotides.seq.translate()[position-1]
+                    else:
+                        position=(location-end-3)//3
+                        residue=coding_nucleotides.reverse_complement().seq.translate()[position-1]
+
+                    return(gene_name,residue,position)
+
+        print(location)
+
+        # now that we know what we are looking for, iterate through all the features in the genomes
+        for record in self.genome.features:
+
+            # check that the record is a Coding Sequence
+            if record.type in ['CDS','rRNA']:
+
+                # the start and end positions in the reference genome
+                start=record.location.start.position
+                end=record.location.end.position
+
+                strand=record.location.strand.real
+
+                if strand==1:
+                    if location>(start-100) and location<start:
+                        position=location-start
+                        gene_name=record.qualifiers['gene'][0]
+                        base=self.genome[location].lower()
+                        return(gene_name,base,position)
+                else:
+                    if location<(end+100) and location>end:
+                        position=end-location
+                        gene_name=record.qualifiers['gene'][0]
+                        base=self.genome[location].lower()
+                        return(gene_name,base,position)
