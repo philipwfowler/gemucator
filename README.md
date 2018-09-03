@@ -2,7 +2,7 @@
 
 # gemucator
 
-gemucator is short for "Genbank Mutation Locator". It is a simple Python3 class for incorporating into tools that, if you give it a mutation, it will tell its location in the reference genome (and vice versa). The `gemucator` class accepts a path to a genbank file; since I am working with /M. tuberculosis/ this is the H37rV genbank file by default, but any genbank file should work.
+gemucator is short for "Genbank Mutation Locator". It is a simple Python3 class for incorporating into tools that, if you give it a mutation, it will tell its location in the reference genome (and vice versa). The `gemucator` class accepts a path to a genbank file; since I am working with *M. tuberculosis* this is the H37rV genbank file by default, but any genbank file should work.
 
 The package comes with a simple script called `gemucator-run.py` that shows how it works. All these examples are for TB.
 
