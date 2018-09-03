@@ -1,6 +1,6 @@
 [![DOI](https://zenodo.org/badge/147030278.svg)](https://zenodo.org/badge/latestdoi/147030278)
 
-# genucator
+# gemucator
 
 genucator is short for "Genbank Mutation Locator". It is a simple Python3 class for incorporating into tools that, if you give it a mutation, it will tell its location in the reference genome (and vice versa). The `genucator` class accepts a path to a genbank file; since I am working with /M. tuberculosis/ this is the H37rV genbank file by default, but any genbank file should work.
 
