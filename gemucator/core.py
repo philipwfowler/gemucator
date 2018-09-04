@@ -46,7 +46,7 @@ class gemucator(object):
         cols=mutation.split("_")
 
         # check the mutation at least comprises the expected number of sections
-        assert len(cols) in [2,4], "mutation "+mutation+" not in correct format!"
+        assert len(cols) in [2,3,4], "mutation "+mutation+" not in correct format!"
 
         # the gene/locus name should always be the first component
         gene_name=cols[0]
@@ -62,7 +62,7 @@ class gemucator(object):
             if position<0:
 
                 assert before in ['c','t','g','a'], before+" is not a nucleotide!"
-                assert after in ['c','t','g','a','*'], after+" is not a nucleotide!"
+                assert after in ['c','t','g','a','?'], after+" is not a nucleotide!"
 
                 mutation_type="PROMOTER"
 
@@ -72,12 +72,12 @@ class gemucator(object):
                 if nucleotide_mutation:
 
                     assert before in ['c','t','g','a'], before+" is not a nucleotide!"
-                    assert after in ['c','t','g','a','*'], after+" is not a nucleotide!"
+                    assert after in ['c','t','g','a','?'], after+" is not a nucleotide!"
 
                 else:
 
                     assert before in ["!",'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z'], after+" is not an amino acid!"
-                    assert after in ['*',"!",'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z'], after+" is not an amino acid!"
+                    assert after in ['?',"!",'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z'], after+" is not an amino acid!"
 
                 mutation_type="SNP"
 
@@ -87,10 +87,11 @@ class gemucator(object):
             position=int(cols[1])
 
             # be defensive here also!
-            assert cols[2] in ["ins","del"], "INDEL must be on the format rpoB_1300_ins_1 i.e. the third element must be ins or del, not "+cols[2]
+            assert cols[2] in ["ins","del","indel"], "INDEL must be on the format rpoB_1300_ins_1 i.e. the third element must be ins or del, not "+cols[2]
 
-            if cols[3]!="*":
-                assert int(cols[3])>0, "last element in INDEL must be * or a positive integer"
+            if len(cols)==4:
+                if cols[3]!="*":
+                    assert int(cols[3])>0, "last element in INDEL must be * or a positive integer"
 
             # only then allow this to be an INDEL!
             mutation_type="INDEL"
