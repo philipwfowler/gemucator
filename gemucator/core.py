@@ -192,7 +192,7 @@ class gemucator(object):
 
         return(base_positions,bases)
 
-    def identify_gene(self,location):
+    def identify_gene(self,location,promoter_length=100):
 
         assert int(location)>0, "genomic position has to be a positive integer"
 
@@ -213,7 +213,12 @@ class gemucator(object):
                     # retrieve the coding nucleotides for this gene
                     coding_nucleotides=self.genome[start:end]
 
-                    gene_name=record.qualifiers['gene'][0]
+                    if 'gene' in record.qualifiers.keys():
+                        gene_name=record.qualifiers['gene'][0]
+                    elif 'locus_tag' in record.qualifiers.keys():
+                        gene_name=record.qualifiers['locus_tag'][0]
+                    else:
+                        gene_name=None
 
                     strand=record.location.strand.real
 
@@ -240,13 +245,13 @@ class gemucator(object):
                 strand=record.location.strand.real
 
                 if strand==1:
-                    if location>(start-100) and location<start:
+                    if location>(start-promoter_length) and location<start:
                         position=location-start
                         gene_name=record.qualifiers['gene'][0]
                         base=self.genome[location].lower()
                         return(gene_name,base,position)
                 else:
-                    if location<(end+100) and location>end:
+                    if location<(end+promoter_length) and location>end:
                         position=end-location
                         gene_name=record.qualifiers['gene'][0]
                         base=self.genome[location].lower()

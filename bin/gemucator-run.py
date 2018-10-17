@@ -9,6 +9,7 @@ if __name__ == "__main__":
     parser.add_argument("--mutation",help="the full length mutation to locate on the genome e.g. rpoB_S450L")
     parser.add_argument("--nucleotide",action='store_true',help="overrides the logic and forces the code to treat this mutation as a simple nucleotide mutation. Useful for RNA genes.")
     parser.add_argument("--location",type=int,help="the genome position we want to find the gene for")
+    parser.add_argument("--promoter_length",type=int,default=100,help="the number of bases upstream of a gene that we will consider to form the promoter")
     parser.add_argument("--genbank_file",help="the path to the reference GenBank file we want to work with. If not specified, the code will load H37rV.gbk from its config/ folder.")
     options = parser.parse_args()
 
@@ -27,7 +28,7 @@ if __name__ == "__main__":
 
     elif options.location:
 
-        (gene,ref,position) = reference_genome.identify_gene(options.location)
+        (gene,ref,position) = reference_genome.identify_gene(options.location,promoter_length=options.promoter_length)
 
         if gene is not None:
 
