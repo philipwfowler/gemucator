@@ -194,7 +194,7 @@ class gemucator(object):
     def gene_exists(self,gene_name):
 
         '''
-        Simply check to see if the specified gene exists in the reference genbank file by searching all the gene and locus tagsself.
+        Simply check to see if the specified gene exists in the reference genbank file by searching all the gene and locus tags.
 
         Returns True/False
         '''
@@ -215,6 +215,34 @@ class gemucator(object):
                 elif 'locus_tag' in record.qualifiers.keys():
                     if gene_name in record.qualifiers['locus_tag']:
                         return(True)
+
+        return(False)
+
+    def gene_type(self,gene_name):
+
+        '''
+        Returns GENE or LOCUS as the gene type. Cannot distinguish RNA genes at present.
+
+        Based on gene_exists() method!
+        '''
+
+        assert gene_name is not None, "you have to specify a gene_name!"
+
+        for record in self.genome.features:
+
+            # check that the record is a Coding Sequence
+            if record.type in ['CDS','rRNA']:
+
+                found_record=False
+
+                # if it is a gene
+                if 'gene' in record.qualifiers.keys():
+                    if gene_name in record.qualifiers['gene']:
+                        return('GENE')
+
+                elif 'locus_tag' in record.qualifiers.keys():
+                    if gene_name in record.qualifiers['locus_tag']:
+                        return('LOCUS')
 
         return(False)
 
