@@ -32,7 +32,6 @@ class gemucator(object):
         self.genbank_file=genbank_file
 
 
-
     def locate_mutation(self,mutation,nucleotide_mutation=False):
 
         '''Given a specified mutation, return the location(s) and nucleotide(s) in the reference genome.
@@ -191,6 +190,33 @@ class gemucator(object):
             raise Exception("are you sure mutation "+mutation+" is in this reference genome?")
 
         return(base_positions,bases)
+
+    def gene_exists(self,gene_name):
+
+        '''
+        Simply check to see if the specified gene exists in the reference genbank file by searching all the gene and locus tagsself.
+
+        Returns True/False
+        '''
+        assert gene_name is not None, "you have to specify a gene_name!"
+
+        for record in self.genome.features:
+
+            # check that the record is a Coding Sequence
+            if record.type in ['CDS','rRNA']:
+
+                found_record=False
+
+                # if it is a gene
+                if 'gene' in record.qualifiers.keys():
+                    if gene_name in record.qualifiers['gene']:
+                        return(True)
+
+                elif 'locus_tag' in record.qualifiers.keys():
+                    if gene_name in record.qualifiers['locus_tag']:
+                        return(True)
+
+        return(False)
 
     def identify_gene(self,location,promoter_length=100):
 
