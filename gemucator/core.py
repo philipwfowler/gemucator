@@ -31,8 +31,18 @@ class gemucator(object):
         # remember the name of the genbank file for use in assert statements later
         self.genbank_file=genbank_file
 
-
     def locate_mutation(self,mutation,nucleotide_mutation=False):
+
+        result=self._analyse_mutation(mutation,nucleotide_mutation=nucleotide_mutation)
+
+        return(result)
+
+    def mutation_valid(self,mutation,nucleotide_mutation=False):
+
+        result=self._analyse_mutation(mutation,nucleotide_mutation=nucleotide_mutation)
+
+
+    def _analyse_mutation(self,mutation,nucleotide_mutation=False):
 
         '''Given a specified mutation, return the location(s) and nucleotide(s) in the reference genome.
 
@@ -189,7 +199,7 @@ class gemucator(object):
         if not base_positions:
             raise Exception("are you sure mutation "+mutation+" is in this reference genome?")
 
-        return(base_positions,bases)
+        return(True,base_positions,bases)
 
     def gene_exists(self,gene_name):
 
