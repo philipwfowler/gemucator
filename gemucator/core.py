@@ -93,17 +93,29 @@ class gemucator(object):
         # otherwise it must be an INDEL, which is always nucleotide based
         else:
 
-            position=int(cols[1])
+            # deal with wildcards in the position
+            if cols[1]=="*":
 
-            # be defensive here also!
-            assert cols[2] in ["ins","del","indel"], "INDEL must be on the format rpoB_1300_ins_1 i.e. the third element must be ins or del, not "+cols[2]
+                assert self.gene_exists(gene_name), "gene "+gene_name+" not in GenBank file!"
 
-            if len(cols)==4:
-                if cols[3]!="*":
-                    assert int(cols[3])>0, "last element in INDEL must be * or a positive integer"
+                print("wildtype position so cannot check reference, but gene is present")
 
-            # only then allow this to be an INDEL!
-            mutation_type="INDEL"
+                return(True)
+
+            else:
+                position=int(cols[1])
+
+                # be defensive here also!
+                assert cols[2] in ["ins","del","indel","fs"], "INDEL must be on the format rpoB_1300_ins_1 i.e. the third element must be ins or del, not "+cols[2]
+
+                if len(cols)==4:
+                    if cols[3]!="*":
+                        assert int(cols[3])>0, "last element in INDEL must be * or a positive integer"
+
+                # only then allow this to be an INDEL!
+                mutation_type="INDEL"
+
+        base_positions=[]
 
         # now that we know what we are looking for, iterate through all the features in the genomes
         for record in self.genome.features:
@@ -133,8 +145,6 @@ class gemucator(object):
 
                     # retrieve the coding nucleotides for this gene
                     coding_nucleotides=self.genome[start:end]
-
-                    base_positions=[]
 
                     if mutation_type=="SNP" and not nucleotide_mutation:
 
