@@ -35,12 +35,19 @@ class gemucator(object):
 
         result=self._analyse_mutation(mutation,nucleotide_mutation=nucleotide_mutation)
 
-        return(result)
+        if result[0]:
+            return(result[1])
+        else:
+            return(False)
 
-    def mutation_valid(self,mutation,nucleotide_mutation=False):
+    def valid_mutation(self,mutation,nucleotide_mutation=False):
 
         result=self._analyse_mutation(mutation,nucleotide_mutation=nucleotide_mutation)
 
+        if result[0]:
+            return(True)
+        else:
+            return(result[1])
 
     def _analyse_mutation(self,mutation,nucleotide_mutation=False):
 
@@ -98,8 +105,6 @@ class gemucator(object):
 
                 assert self.gene_exists(gene_name), "gene "+gene_name+" not in GenBank file!"
 
-                print("wildtype position so cannot check reference, but gene is present")
-
                 return(True)
 
             else:
@@ -155,9 +160,11 @@ class gemucator(object):
                             bases=self.genome[base_position:base_position+3].seq
 
                             if before=="!":
-                                assert "*"==bases.translate(), "wildtype amino acid specified in mutation ("+before+") does not match the "+self.genbank_file+" genbank file ("+bases.translate()+")"
+                                if "*"!=bases.translate():
+                                    return(False,str(bases.translate()))
                             else:
-                                assert before==bases.translate(), "wildtype amino acid specified in mutation ("+before+") does not match the "+self.genbank_file+" genbank file ("+bases.translate()+")"
+                                if before!=bases.translate():
+                                    return(False,str(bases.translate()))
 
                             bases=str(bases).lower()
 
@@ -172,9 +179,11 @@ class gemucator(object):
                             bases=self.genome[base_position-3:base_position].reverse_complement().seq
 
                             if before=="!":
-                                assert "*"==bases.translate(), "wildtype amino acid specified in mutation ("+before+") does not match the "+self.genbank_file+" genbank file ("+bases.translate()+")"
+                                if "*"!=bases.translate():
+                                    return(False,str(bases.translate()))
                             else:
-                                assert before==bases.translate(), "wildtype amino acid specified in mutation ("+before+") does not match the "+self.genbank_file+" genbank file ("+bases.translate()+")"
+                                if before!=bases.translate():
+                                    return(False,str(bases.translate()))
 
                             bases=str(bases).lower()
 
@@ -196,20 +205,23 @@ class gemucator(object):
 
                             bases=self.genome[base_position:base_position+1].reverse_complement().seq.lower()
 
+                        bases=str(bases).lower()
+
                         # as the reference base is specified for a promoter mutation, be defensive and check it agrees with the genbank file
                         if mutation_type=="PROMOTER":
-                            assert bases==before, "wildtype base specified in mutation ("+before+") does not match the "+self.genbank_file+" genbank file ("+bases+")"
+                            if bases!=before:
+                                return(False, str(bases))
 
                         base_positions.append(base_position)
 
                     else:
 
-                        raise Exception("are you sure mutation "+mutation+" is in this reference genome?")
+                        raise (False,"are you sure mutation "+mutation+" is in this reference genome?")
 
         if not base_positions:
             raise Exception("are you sure mutation "+mutation+" is in this reference genome?")
 
-        return(True,base_positions,bases)
+        return(True,(bases,base_positions))
 
     def gene_exists(self,gene_name):
 
@@ -218,25 +230,13 @@ class gemucator(object):
 
         Returns True/False
         '''
-        assert gene_name is not None, "you have to specify a gene_name!"
 
-        for record in self.genome.features:
+        result=self._analyse_gene(gene_name)
 
-            # check that the record is a Coding Sequence
-            if record.type in ['CDS','rRNA']:
-
-                found_record=False
-
-                # if it is a gene
-                if 'gene' in record.qualifiers.keys():
-                    if gene_name in record.qualifiers['gene']:
-                        return(True)
-
-                elif 'locus_tag' in record.qualifiers.keys():
-                    if gene_name in record.qualifiers['locus_tag']:
-                        return(True)
-
-        return(False)
+        if result is False:
+            return(False)
+        else:
+            return(True)
 
     def gene_type(self,gene_name):
 
@@ -245,6 +245,15 @@ class gemucator(object):
 
         Based on gene_exists() method!
         '''
+
+        result=self._analyse_gene(gene_name)
+
+        if result is False:
+            return(None)
+        else:
+            return(result)
+
+    def _analyse_gene(self,gene_name):
 
         assert gene_name is not None, "you have to specify a gene_name!"
 
