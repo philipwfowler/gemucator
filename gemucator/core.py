@@ -9,9 +9,6 @@ class gemucator(object):
     '''The gemucator class (short for GenBank Mutation Locator) is designed to tell you the location of a mutation
     in the given GenBank reference genome.
 
-    Args:
-        genbank_file (str): The default (and provided) GenBank file is the standard H37rV reference for M. tuberculosis, but any GenBank file should be able to be parsed
-
     Notes:
         * Mutations are specified in the form gene_mutation e.g. rpoB_S450L. Three forms are accepted: SNP, PROMOTER or INDEL.
         * Amino acids are specified throughout in UPPERCASE and nucleotides in lower case.
@@ -21,8 +18,12 @@ class gemucator(object):
         * The code is extremely defensive and if the mutation nomenclature includes the reference amino acid or base, this will be checked against the provided genbank file.
     '''
 
-    def __init__(self, genbank_file=pkg_resources.resource_filename("gemucator", "../config/H37rV.gbk")):
-        ''' Instantiate an instance of the class by loading the specified GenBank file
+    def __init__(self, genbank_file=pkg_resources.resource_filename("gemucator", "../config/H37rV-v3.gbk")):
+        '''
+        Instantiate an instance of the class by loading the specified GenBank file
+
+        Args:
+            genbank_file (str) path to the required GenBank file. By default version 3 of the H37rV genome for M. tuberculosis is loaded.
         '''
 
         # use BioPython to load the genbank file
@@ -33,6 +34,17 @@ class gemucator(object):
 
     def locate_mutation(self,mutation,nucleotide_mutation=False):
 
+        '''
+        Given a mutation, return the numeric location in the GenBank file.
+
+        Args:
+            mutation (str) e.g. katG_S315T, katG_c-15t, katG_200_ins_3
+            nucleotide_mutation (bool). Set to True if this is an RNA encoding gene (rather than encoding amino acids)
+
+        Returns:
+            location (int) if the mutation is valid, False otherwise
+        '''
+
         result=self._analyse_mutation(mutation,nucleotide_mutation=nucleotide_mutation)
 
         if result[0]:
@@ -41,6 +53,17 @@ class gemucator(object):
             return(False)
 
     def valid_mutation(self,mutation,nucleotide_mutation=False):
+
+        '''
+        Simply checks to see if the specified mutation validates against the supplied reference genbank file.
+
+        Args:
+            mutation (str) e.g. katG_S315T, katG_c-15t, katG_200_ins_3
+            nucleotide_mutation (bool). Set to True if this is an RNA encoding gene (rather than encoding amino acids)
+
+        Returns:
+            True/False
+        '''
 
         result=self._analyse_mutation(mutation,nucleotide_mutation=nucleotide_mutation)
 
@@ -83,7 +106,7 @@ class gemucator(object):
                     position=str(cols[1][0:-1])
 
                 # all the positions should be a wildcard otherwise something is wrong..
-                assert position=='*', 'has a * but not formatted like a wildcard'
+                assert position=='*', mutation+' has a * but not formatted like a wildcard'
             else:
 
                 wildcard=False
@@ -139,7 +162,7 @@ class gemucator(object):
             else:
 
                 wildcard=False
-                
+
                 position=int(cols[1])
 
                 # be defensive here also!
@@ -249,12 +272,16 @@ class gemucator(object):
 
         return(True,(bases,base_positions))
 
-    def gene_exists(self,gene_name):
+    def valid_gene(self,gene_name):
 
         '''
-        Simply check to see if the specified gene exists in the reference genbank file by searching all the gene and locus tags.
+        Simply checks to see if the specified gene exists in the supplied reference genbank file by searching all the gene and locus tags.
 
-        Returns True/False
+        Args:
+            gene_name (str) e.g. katG
+
+        Returns:
+            True/False
         '''
 
         result=self._analyse_gene(gene_name)
@@ -269,7 +296,11 @@ class gemucator(object):
         '''
         Returns GENE or LOCUS as the gene type. Cannot distinguish RNA genes at present.
 
-        Based on gene_exists() method!
+        Args:
+            gene_name (str) e.g. "katG"
+
+        Returns:
+            GENE, LOCUS or None
         '''
 
         result=self._analyse_gene(gene_name)
@@ -280,6 +311,16 @@ class gemucator(object):
             return(result[0])
 
     def _analyse_gene(self,gene_name):
+
+        '''
+        Internal method that feeds both gene_type() and valid_gene()
+
+        Args:
+            gene_name (str) e.g. katG
+
+        Returns:
+            Tuple with first element being GENE,LOCUS or None and the second being the record in the GenBank file
+        '''
 
         assert gene_name is not None, "you have to specify a gene_name!"
 
@@ -302,6 +343,19 @@ class gemucator(object):
         return(False,None)
 
     def identify_gene(self,location,promoter_length=100):
+
+        '''
+        What is encoded at the supplied numeric position in the genome defined by the genbank file?
+
+        Args:
+            location (int)  numeric location in the genome
+            promoter_length (int) the number of nucleotides upstream of the coding sequence to consider as the promoter. Default is 100.
+
+        Returns:
+            gene_name (str) the name of the name, if relevant, e.g. "katG"
+            residue or base (str) e.g. "A" or "a"
+            position (int)
+        '''
 
         assert int(location)>0, "genomic position has to be a positive integer"
 
