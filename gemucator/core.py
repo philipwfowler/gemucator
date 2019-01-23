@@ -42,15 +42,19 @@ class gemucator(object):
             nucleotide_mutation (bool). Set to True if this is an RNA encoding gene (rather than encoding amino acids)
 
         Returns:
-            location (int) if the mutation is valid, False otherwise
+            A tuple.
+
+            If the mutation does not validate e.g. katG_F315T, then this has the form (False,'S'). The second element is the base or amino acid at this position in the Genbank file,
+            If it does validate then for a nucleotide or amino acid mutation the tuple is (True,('c',1673424)) or (True,('agc', [2155169, 2155168, 2155167]))
         '''
 
         result=self._analyse_mutation(mutation,nucleotide_mutation=nucleotide_mutation)
 
-        if result[0]:
-            return(result[1])
-        else:
-            return(False)
+        return(result)
+        # if result[0]:
+        #     return(result[1])
+        # else:
+        #     return(False)
 
     def valid_mutation(self,mutation,nucleotide_mutation=False):
 
@@ -168,9 +172,9 @@ class gemucator(object):
                 # be defensive here also!
                 assert cols[2] in ["ins","del","indel","fs"], "INDEL must be on the format rpoB_1300_ins_1 i.e. the third element must be ins or del, not "+cols[2]
 
-                if len(cols)==4:
-                    if cols[3]!="*":
-                        assert int(cols[3])>0, "last element in INDEL must be * or a positive integer"
+                # if len(cols)==4:
+                #     if cols[3]!="*":
+                #         assert int(cols[3])>0 or cols[3], "last element in INDEL must be * or a positive integer"
 
                 # only then allow this to be an INDEL!
                 mutation_type="INDEL"

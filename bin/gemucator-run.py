@@ -20,11 +20,14 @@ if __name__ == "__main__":
 
     if options.mutation:
 
-        (locations,bases)=reference_genome.locate_mutation(options.mutation,nucleotide_mutation=options.nucleotide)
+        (result,data)=reference_genome.locate_mutation(options.mutation,nucleotide_mutation=options.nucleotide)
 
-        print(options.mutation+":")
-        for (p,b) in zip(locations,bases):
-            print(p,b)
+        if result is True:
+            print(options.mutation+":")
+            for (p,b) in zip(data[0],data[1]):
+                print(b,p)
+        else:
+            raise ValueError("Mutation "+options.mutation+" does not validate against the supplied GenBank file because the reference amino acid/base is "+data[0]+" !")
 
     elif options.location:
 
