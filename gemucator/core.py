@@ -47,7 +47,7 @@ class gemucator(object):
         if result[0]:
             return(True)
         else:
-            return(result[1])
+            return(False)
 
     def _analyse_mutation(self,mutation,nucleotide_mutation=False):
 
@@ -70,14 +70,41 @@ class gemucator(object):
         # determine if this is a CDS or PROMOTER SNP mutation
         if len(cols)==2:
 
-            before=cols[1][0]
+            if '*' in cols[1]:
+
+                # there can be no 'before' amino acid if there is a wildcard at position
+                wildcard=True
+
+                if cols[1][0]=='-':
+                    promoter=True
+                    position=str(cols[1][1:-1])
+                else:
+                    promoter=False
+                    position=str(cols[1][0:-1])
+
+                # all the positions should be a wildcard otherwise something is wrong..
+                assert position=='*', 'has a * but not formatted like a wildcard'
+            else:
+
+                wildcard=False
+
+                before=cols[1][0]
+                position=int(cols[1][1:-1])
+
+                if position<0:
+                    promoter=True
+                else:
+                    promoter=False
+
+            # they all have the after amino acid in the same place
             after=cols[1][-1]
-            position=int(cols[1][1:-1])
 
-            # if the position is a negative integer then this is a promoter nucleotide mutation
-            if position<0:
+            # if it is a promoter mutation
+            if promoter:
 
-                assert before in ['c','t','g','a'], before+" is not a nucleotide!"
+                if not wildcard:
+                    assert before in ['c','t','g','a'], before+" is not a nucleotide!"
+
                 assert after in ['c','t','g','a','?'], after+" is not a nucleotide!"
 
                 mutation_type="PROMOTER"
@@ -87,13 +114,17 @@ class gemucator(object):
 
                 if nucleotide_mutation:
 
-                    assert before in ['c','t','g','a'], before+" is not a nucleotide!"
+                    if not wildcard:
+                        assert before in ['c','t','g','a'], before+" is not a nucleotide!"
+
                     assert after in ['c','t','g','a','?'], after+" is not a nucleotide!"
 
                 else:
 
-                    assert before in ["!",'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z'], after+" is not an amino acid!"
-                    assert after in ['?',"!",'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z'], after+" is not an amino acid!"
+                    if not wildcard:
+                        assert before in ["!",'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z'], after+" is not an amino acid!"
+
+                    assert after in ['=','?',"!",'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z'], after+" is not an amino acid!"
 
                 mutation_type="SNP"
 
@@ -103,11 +134,12 @@ class gemucator(object):
             # deal with wildcards in the position
             if cols[1]=="*":
 
-                assert self.gene_exists(gene_name), "gene "+gene_name+" not in GenBank file!"
-
-                return(True)
+                wildcard=True
 
             else:
+
+                wildcard=False
+                
                 position=int(cols[1])
 
                 # be defensive here also!
@@ -122,101 +154,95 @@ class gemucator(object):
 
         base_positions=[]
 
-        # now that we know what we are looking for, iterate through all the features in the genomes
-        for record in self.genome.features:
+        (result,record)=self._analyse_gene(gene_name)
 
-            # check that the record is a Coding Sequence
-            if record.type in ['CDS','rRNA']:
+        if not result:
+            return(False,(None,None))
 
-                found_record=False
+        else:
 
-                # if it is a gene
-                if 'gene' in record.qualifiers.keys():
-                    if gene_name in record.qualifiers['gene']:
-                        found_record=True
+            # if we are here the gene exists, but there is a wildcard so we can't check any further
+            if wildcard:
+                return(True,(None,None))
 
-                elif 'locus_tag' in record.qualifiers.keys():
-                    if gene_name in record.qualifiers['locus_tag']:
-                        found_record=True
+            else:
 
-                if found_record:
+                # the start and end positions in the reference genome
+                start=record.location.start.position
+                end=record.location.end.position
 
-                    # the start and end positions in the reference genome
-                    start=record.location.start.position
-                    end=record.location.end.position
+                # and finally whether the strand (which if -1 means reverse complement)
+                strand=record.location.strand.real
 
-                    # and finally whether the strand (which if -1 means reverse complement)
-                    strand=record.location.strand.real
+                # retrieve the coding nucleotides for this gene
+                coding_nucleotides=self.genome[start:end]
 
-                    # retrieve the coding nucleotides for this gene
-                    coding_nucleotides=self.genome[start:end]
+                if mutation_type=="SNP" and not nucleotide_mutation:
 
-                    if mutation_type=="SNP" and not nucleotide_mutation:
+                    if strand==1:
 
-                        if strand==1:
+                        base_position=start-1+((3*position)-2)
 
-                            base_position=start-1+((3*position)-2)
+                        bases=self.genome[base_position:base_position+3].seq
 
-                            bases=self.genome[base_position:base_position+3].seq
-
-                            if before=="!":
-                                if "*"!=bases.translate():
-                                    return(False,str(bases.translate()))
-                            else:
-                                if before!=bases.translate():
-                                    return(False,str(bases.translate()))
-
-                            bases=str(bases).lower()
-
-                            for i in bases:
-                                base_positions.append(base_position)
-                                base_position+=1
-
+                        if before=="!":
+                            if "*"!=bases.translate():
+                                return(False,str(bases.translate()))
                         else:
-
-                            base_position=end+1-((3*position)-2)
-
-                            bases=self.genome[base_position-3:base_position].reverse_complement().seq
-
-                            if before=="!":
-                                if "*"!=bases.translate():
-                                    return(False,str(bases.translate()))
-                            else:
-                                if before!=bases.translate():
-                                    return(False,str(bases.translate()))
-
-                            bases=str(bases).lower()
-
-                            for i in bases:
-                                base_positions.append(base_position)
-                                base_position+=-1
-
-                    elif (mutation_type in ["PROMOTER","INDEL"]) or nucleotide_mutation:
-
-                        if strand==1:
-
-                            base_position=start+position
-
-                            bases=self.genome[base_position:base_position+1].seq.lower()
-
-                        else:
-
-                            base_position=end-1-position
-
-                            bases=self.genome[base_position:base_position+1].reverse_complement().seq.lower()
+                            if before!=bases.translate():
+                                return(False,str(bases.translate()))
 
                         bases=str(bases).lower()
 
-                        # as the reference base is specified for a promoter mutation, be defensive and check it agrees with the genbank file
-                        if mutation_type=="PROMOTER":
-                            if bases!=before:
-                                return(False, str(bases))
-
-                        base_positions.append(base_position)
+                        for i in bases:
+                            base_positions.append(base_position)
+                            base_position+=1
 
                     else:
 
-                        raise (False,"are you sure mutation "+mutation+" is in this reference genome?")
+                        base_position=end+1-((3*position)-2)
+
+                        bases=self.genome[base_position-3:base_position].reverse_complement().seq
+
+                        if before=="!":
+                            if "*"!=bases.translate():
+                                return(False,str(bases.translate()))
+                        else:
+                            if before!=bases.translate():
+                                return(False,str(bases.translate()))
+
+                        bases=str(bases).lower()
+
+                        for i in bases:
+                            base_positions.append(base_position)
+                            base_position+=-1
+
+                elif (mutation_type in ["PROMOTER","INDEL"]) or nucleotide_mutation:
+
+                    if strand==1:
+
+                        base_position=start+position
+
+                        bases=self.genome[base_position:base_position+1].seq.lower()
+
+                    else:
+
+                        base_position=end-1-position
+
+                        bases=self.genome[base_position:base_position+1].reverse_complement().seq.lower()
+
+                    bases=str(bases).lower()
+
+                    # as the reference base is specified for a promoter mutation, be defensive and check it agrees with the genbank file
+                    if mutation_type=="PROMOTER":
+                        if bases!=before:
+                            return(False, str(bases))
+
+                    base_positions.append(base_position)
+
+                else:
+
+                    raise (False,"are you sure mutation "+mutation+" is in this reference genome?")
 
         if not base_positions:
             raise Exception("are you sure mutation "+mutation+" is in this reference genome?")
@@ -233,7 +259,7 @@ class gemucator(object):
 
         result=self._analyse_gene(gene_name)
 
-        if result is False:
+        if result[0] is False:
             return(False)
         else:
             return(True)
@@ -248,10 +274,10 @@ class gemucator(object):
 
         result=self._analyse_gene(gene_name)
 
-        if result is False:
+        if result[0] is False:
             return(None)
         else:
-            return(result)
+            return(result[0])
 
     def _analyse_gene(self,gene_name):
 
@@ -267,13 +293,13 @@ class gemucator(object):
                 # if it is a gene
                 if 'gene' in record.qualifiers.keys():
                     if gene_name in record.qualifiers['gene']:
-                        return('GENE')
+                        return('GENE',record)
 
                 elif 'locus_tag' in record.qualifiers.keys():
                     if gene_name in record.qualifiers['locus_tag']:
-                        return('LOCUS')
+                        return('LOCUS',record)
 
-        return(False)
+        return(False,None)
 
     def identify_gene(self,location,promoter_length=100):
 
