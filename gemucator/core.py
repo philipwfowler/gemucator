@@ -18,7 +18,7 @@ class gemucator(object):
         * The code is extremely defensive and if the mutation nomenclature includes the reference amino acid or base, this will be checked against the provided genbank file.
     '''
 
-    def __init__(self, genbank_file=pkg_resources.resource_filename("gemucator", "../config/H37rV-v3.gbk")):
+    def __init__(self, genbank_file=pkg_resources.resource_filename("gemucator", "../config/H37rV_v3.gbk")):
         '''
         Instantiate an instance of the class by loading the specified GenBank file
 
