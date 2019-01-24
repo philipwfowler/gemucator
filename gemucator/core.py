@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import pkg_resources
+import pkg_resources, re
 
 from Bio import SeqIO
 
@@ -159,7 +159,7 @@ class gemucator(object):
         else:
 
             # deal with wildcards in the position
-            if cols[1]=="*":
+            if cols[1] in ["*","-*"]:
 
                 wildcard=True
 
@@ -172,9 +172,13 @@ class gemucator(object):
                 # be defensive here also!
                 assert cols[2] in ["ins","del","indel","fs"], "INDEL must be on the format rpoB_1300_ins_1 i.e. the third element must be ins or del, not "+cols[2]
 
-                # if len(cols)==4:
-                #     if cols[3]!="*":
-                #         assert int(cols[3])>0 or cols[3], "last element in INDEL must be * or a positive integer"
+                if len(cols)==4:
+                    if cols[3].isnumeric():
+                        assert int(cols[3])>0, "number of nucleotides inserted or deleted must be >0"
+                    else:
+                        assert bool(re.match('^[catg]+$', cols[3])), "INDEL contains bases other than a,t,c,g"
+                    # if cols[3]!="*":
+                    #     assert int(cols[3])>0 or cols[3], "last element in INDEL must be * or a positive integer"
 
                 # only then allow this to be an INDEL!
                 mutation_type="INDEL"
