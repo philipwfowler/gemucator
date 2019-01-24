@@ -149,7 +149,7 @@ class gemucator(object):
                 else:
 
                     if not wildcard:
-                        assert before in ["!",'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z'], after+" is not an amino acid!"
+                        assert before in ["!",'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z'], before+" is not an amino acid!"
 
                     assert after in ['=','?',"!",'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z'], after+" is not an amino acid!"
 
@@ -177,8 +177,6 @@ class gemucator(object):
                         assert int(cols[3])>0, "number of nucleotides inserted or deleted must be >0"
                     else:
                         assert bool(re.match('^[catg]+$', cols[3])), "INDEL contains bases other than a,t,c,g"
-                    # if cols[3]!="*":
-                    #     assert int(cols[3])>0 or cols[3], "last element in INDEL must be * or a positive integer"
 
                 # only then allow this to be an INDEL!
                 mutation_type="INDEL"
