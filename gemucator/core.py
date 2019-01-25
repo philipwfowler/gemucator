@@ -56,7 +56,7 @@ class gemucator(object):
         # else:
         #     return(False)
 
-    def valid_mutation(self,mutation,nucleotide_mutation=False):
+    def valid_mutation(self,mutation):
 
         '''
         Simply checks to see if the specified mutation validates against the supplied reference genbank file.
@@ -69,7 +69,17 @@ class gemucator(object):
             True/False
         '''
 
-        result=self._analyse_mutation(mutation,nucleotide_mutation=nucleotide_mutation)
+        # find out what the type of gene it is
+        gene_name=mutation.split("_")[0]
+
+        # find out if it is a GENE, LOCUS or RNA
+        gene_type=self.gene_type(gene_name)
+
+        # if it is a gene encoding rRNA, then tell the method!
+        if gene_type=="RNA":
+            result=self._analyse_mutation(mutation,nucleotide_mutation=True)
+        else:
+            result=self._analyse_mutation(mutation,nucleotide_mutation=False)
 
         if result[0]:
             return(True)
@@ -314,7 +324,10 @@ class gemucator(object):
         if result[0] is False:
             return(None)
         else:
-            return(result[0])
+            if result[1].type=="rRNA":
+                return("RNA")
+            else:
+                return(result[0])
 
     def _analyse_gene(self,gene_name):
 
