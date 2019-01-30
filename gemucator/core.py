@@ -142,7 +142,7 @@ class gemucator(object):
                 if not wildcard:
                     assert before in ['c','t','g','a'], before+" is not a nucleotide!"
 
-                assert after in ['c','t','g','a','?'], after+" is not a nucleotide!"
+                assert after in ['c','t','g','a','?','z'], after+" is not a nucleotide!"
 
                 mutation_type="PROMOTER"
 
@@ -154,7 +154,7 @@ class gemucator(object):
                     if not wildcard:
                         assert before in ['c','t','g','a'], before+" is not a nucleotide!"
 
-                    assert after in ['c','t','g','a','?'], after+" is not a nucleotide!"
+                    assert after in ['c','t','g','a','?','z'], after+" is not a nucleotide!"
 
                 else:
 
