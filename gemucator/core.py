@@ -32,6 +32,8 @@ class gemucator(object):
         # remember the name of the genbank file for use in assert statements later
         self.genbank_file=genbank_file
 
+        self.version=self.genome.annotations['accessions'][0]+"."+str(self.genome.annotations['sequence_version'])
+
     def locate_mutation(self,mutation,nucleotide_mutation=False):
 
         '''
