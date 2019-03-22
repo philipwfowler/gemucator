@@ -106,6 +106,8 @@ class gemucator(object):
         # the gene/locus name should always be the first component
         gene_name=cols[0]
 
+        assert self.valid_gene(gene_name), "gene not found in GenBank file! "+gene_name
+
         # determine if this is a CDS or PROMOTER SNP mutation
         if len(cols)==2:
 
@@ -262,13 +264,19 @@ class gemucator(object):
 
                     if strand==1:
 
-                        base_position=start+position
+                        if mutation_type=="PROMOTER":
+                            base_position=start+position
+                        else:
+                            base_position=start+position-1
 
                         bases=self.genome[base_position:base_position+1].seq.lower()
 
                     else:
 
-                        base_position=end-1-position
+                        if mutation_type=="PROMOTER":
+                            base_position=end-position
+                        else:
+                            base_position=end-1-position
 
                         bases=self.genome[base_position:base_position+1].reverse_complement().seq.lower()
 
@@ -385,39 +393,7 @@ class gemucator(object):
         # now that we know what we are looking for, iterate through all the features in the genomes
         for record in self.genome.features:
 
-            # check that the record is a Coding Sequence
-            if record.type in ['CDS','rRNA']:
-
-                # the start and end positions in the reference genome
-                start=record.location.start.position
-                end=record.location.end.position
-
-                if start < location < end:
-
-                    # retrieve the coding nucleotides for this gene
-                    coding_nucleotides=self.genome[start:end]
-
-                    if 'gene' in record.qualifiers.keys():
-                        gene_name=record.qualifiers['gene'][0]
-                    elif 'locus_tag' in record.qualifiers.keys():
-                        gene_name=record.qualifiers['locus_tag'][0]
-                    else:
-                        gene_name=None
-
-                    strand=record.location.strand.real
-
-                    if strand==1:
-
-                        position=(location-start+3)//3
-                        residue=coding_nucleotides.seq.translate()[position-1]
-                    else:
-                        position=(location-end-3)//3
-                        residue=coding_nucleotides.reverse_complement().seq.translate()[position-1]
-
-                    return(gene_name,residue,position)
-
-        # now that we know what we are looking for, iterate through all the features in the genomes
-        for record in self.genome.features:
+            found_gene=False
 
             # check that the record is a Coding Sequence
             if record.type in ['CDS','rRNA']:
@@ -425,20 +401,79 @@ class gemucator(object):
                 # the start and end positions in the reference genome
                 start=record.location.start.position
                 end=record.location.end.position
-
                 strand=record.location.strand.real
 
+                # regular strand
                 if strand==1:
-                    if location>(start-promoter_length) and location<start:
-                        position=location-start
-                        gene_name=record.qualifiers['gene'][0]
-                        base=self.genome[location].lower()
-                        return(gene_name,base,position)
-                else:
-                    if location<(end+promoter_length) and location>end:
-                        position=end-location
-                        gene_name=record.qualifiers['gene'][0]
-                        base=self.genome[location].lower()
-                        return(gene_name,base,position)
+
+                    # are we within the expected region?
+                    if (start-promoter_length) < location < end:
+
+                        found_gene=True
+
+                        # retrieve the coding nucleotides for this gene
+                        coding_nucleotides=self.genome[start:end]
+
+                        # find out the gene_name
+                        if 'gene' in record.qualifiers.keys():
+                            gene_name=record.qualifiers['gene'][0]
+                        elif 'locus_tag' in record.qualifiers.keys():
+                            gene_name=record.qualifiers['locus_tag'][0]
+                        else:
+                            gene_name=None
+
+                        # if we are in the CDS
+                        if location>start:
+
+                            if self.gene_type(gene_name)!="RNA":
+                                position=(location-start+3)//3
+                                residue=coding_nucleotides.seq.translate()[position-1]
+                            else:
+                                position=location-start+1
+                                residue=self.genome[location].lower()
+
+                        # otherwise we are a promoter
+                        else:
+
+                            position=location-start
+                            residue=self.genome[location].lower()
+
+                elif strand==-1:
+
+                    # are we within the expected region?
+                    if start < location < end+promoter_length:
+
+                        found_gene=True
+
+                        # retrieve the coding nucleotides for this gene
+                        coding_nucleotides=self.genome[start:end]
+
+                        # find out the gene_name
+                        if 'gene' in record.qualifiers.keys():
+                            gene_name=record.qualifiers['gene'][0]
+                        elif 'locus_tag' in record.qualifiers.keys():
+                            gene_name=record.qualifiers['locus_tag'][0]
+                        else:
+                            gene_name=None
+
+                        if location<end:
+
+                            if self.gene_type(gene_name)!="RNA":
+                                position=(end-location+3)//3
+                                residue=coding_nucleotides.reverse_complement().seq.translate()[position-1]
+                            else:
+                                position=end-location+1
+                                residue=self.genome[location].reverse_complement().lower()
+
+                        # otherwise we are a promoter
+                        else:
+
+                            position=end-location
+                            residue=self.genome[location].reverse_complement().lower()
+
+
+                if found_gene:
+
+                    return(gene_name,residue,position)
 
         return(None,None,None)
