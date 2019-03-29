@@ -88,17 +88,30 @@ class gemucator(object):
         else:
             return(False)
 
-    def _analyse_mutation(self,mutation,nucleotide_mutation=False):
-
-        '''Given a specified mutation, return the location(s) and nucleotide(s) in the reference genome.
+    def _parse_mutation(self,mutation,nucleotide_mutation):
+        '''
+        Parse the mutation and return a collection of variables and Booleans.
 
         Args:
-            mutation (str): a SNP, PROMOTER or INDEL mutation in the format described in the class docstring.
-            nucleotide_mutation (bool): if True, forces the code to consider this a simple nucleotide mutation (i.e. not an amino acid). Useful for RNA genes like rrs.
+            mutation (str) e.g. katG_S315T, katG_c-15t, katG_200_ins_3
+
+        Returns:
+            gene_name (str): the name of the gene
+            before (str): the amino acid or base in the reference genomes
+            position (int or str): the numerical position of either the amino acid or base
+            after (str): the mutated amino acid or base
+            wildcard (bool): whether the mutation applies to all positions or not
+            promoter (bool): whether the mutation applies to the promoter of a gene
+            mutation_type (str): either PROMOTER, SNP or INDEL
         '''
 
         # first, parse the mutation
         cols=mutation.split("_")
+
+        before=None
+        after=None
+        wildcard=False
+        promoter=False
 
         # check the mutation at least comprises the expected number of sections
         assert len(cols) in [2,3,4], "mutation "+mutation+" not in correct format!"
@@ -195,10 +208,32 @@ class gemucator(object):
                 # only then allow this to be an INDEL!
                 mutation_type="INDEL"
 
+        return(gene_name,before,position,after,wildcard,promoter,mutation_type)
+
+
+    def _analyse_mutation(self,mutation,nucleotide_mutation=False):
+
+        '''Given a specified mutation, return the location(s) and nucleotide(s) in the reference genome.
+
+        Args:
+            mutation (str): a SNP, PROMOTER or INDEL mutation in the format described in the class docstring.
+            nucleotide_mutation (bool): if True, forces the code to consider this a simple nucleotide mutation (i.e. not an amino acid). Useful for RNA genes like rrs.
+
+        Returns:
+            result (boolean): whether successful or not
+            (bases, base_positions): a tuple of the bases and their locations. Hence an amino acid mutation would have 3 entries.
+        '''
+
+        # first parse the supplied mutation
+        (gene_name,before,position,after,wildcard,promoter,mutation_type)=self._parse_mutation(mutation,nucleotide_mutation)
+
+        # now look up the gene in the genbank reference
+        (result,record)=self._fetch_genbank_record(gene_name)
+
+
         base_positions=[]
 
-        (result,record)=self._analyse_gene(gene_name)
-
+        # if
         if not result:
             return(False,(None,None))
 
@@ -274,7 +309,7 @@ class gemucator(object):
                     else:
 
                         if mutation_type=="PROMOTER":
-                            base_position=end-position
+                            base_position=end-position-1
                         else:
                             base_position=end-1-position
 
@@ -310,7 +345,7 @@ class gemucator(object):
             True/False
         '''
 
-        result=self._analyse_gene(gene_name)
+        result=self._fetch_genbank_record(gene_name)
 
         if result[0] is False:
             return(False)
@@ -326,10 +361,10 @@ class gemucator(object):
             gene_name (str) e.g. "katG"
 
         Returns:
-            GENE, LOCUS or None
+            GENE, LOCUS, RNA or None
         '''
 
-        result=self._analyse_gene(gene_name)
+        result=self._fetch_genbank_record(gene_name)
 
         if result[0] is False:
             return(None)
@@ -339,7 +374,7 @@ class gemucator(object):
             else:
                 return(result[0])
 
-    def _analyse_gene(self,gene_name):
+    def _fetch_genbank_record(self,gene_name):
 
         '''
         Internal method that feeds both gene_type() and valid_gene()
