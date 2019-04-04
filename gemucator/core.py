@@ -498,13 +498,13 @@ class gemucator(object):
                                 residue=coding_nucleotides.reverse_complement().seq.translate()[position-1]
                             else:
                                 position=end-location+1
-                                residue=self.genome[location].reverse_complement().lower()
+                                residue=self.genome[location:location+1].reverse_complement().seq.lower()
 
                         # otherwise we are a promoter
                         else:
 
                             position=end-location
-                            residue=self.genome[location].reverse_complement().lower()
+                            residue=self.genome[location:location+1].reverse_complement().seq.lower()
 
 
                 if found_gene:
